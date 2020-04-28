@@ -22,11 +22,8 @@ app.post("/", (req, res) => {
     isErrors: false,
     orders: [],
   };
-  const line = fs.readFileSync("Order.txt").toString().split("\n");
-  for (i in line) {
-    resultJson.orders = line;
-    console.log(line[i]);
-  }
+  
+  resultJson.orders = txtToArr('Order.txt');
 
   // fs.readFile("Order.txt", "utf8", function (error, data) {
   //   if (error) throw error; // если возникла ошибка
@@ -36,6 +33,28 @@ app.post("/", (req, res) => {
   res.json(resultJson);
   console.log(resultJson.orders);
 });
+
+const txtToArr = function(file)
+{
+  try {
+    // Init new array
+    const output = [];
+    // read the textfile and split to lines
+    const line = fs.readFileSync(file).toString().split("\r\n");
+    for (i in line) {
+      console.log(line[i]);
+      // One line to array
+      const lineSplits = line[i].split("%");
+      output.push(lineSplits);
+    };
+
+    //TODO clear the txt file to empty...
+    return output;
+  } catch (err){
+    resultJson.isErrors = true;
+    console.error(err);
+  };
+};
 
 /**
  * Прослушка порта
