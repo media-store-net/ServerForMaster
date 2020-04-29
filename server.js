@@ -1,8 +1,12 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 const http = require("http").Server(app);
 const port = 85;
 const fs = require("fs");
+const connDB = require("./modules/connect");
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 /**
  * Глобальные заголовки
@@ -17,43 +21,57 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post("/", (req, res) => {
+app.get("/", (req, res) => {
   resultJson = {
     isErrors: false,
     orders: [],
   };
-  
-  resultJson.orders = txtToArr('Order.txt');
 
-  // fs.readFile("Order.txt", "utf8", function (error, data) {
-  //   if (error) throw error; // если возникла ошибка
-  //   const line = data.split("\n");
-  //   resultJson.orders = line;
-  // });
+  resultJson.orders = txtToArr("Order.txt");
+
+  connDB(req, res, (db) => {
+    const dbase = db.db("OrdersForMaster");
+
+    let doc = {
+      order: resultJson.orders,
+    };
+    dbase.collection("orders").insertOne(doc, (err, result) => {
+      if (err) {
+        resultJson.isErrors = true;
+        resultJson.strErrors.push(`Ошибка подключения к базе данных ${err}`);
+        // res.json(resultJson);
+        return console.log(err);
+      }
+      db.close();
+      // res.json(resultJson);
+    });
+  });
+
   res.json(resultJson);
-  console.log(resultJson.orders);
+  // console.log(resultJson.orders);
 });
 
-const txtToArr = function(file)
-{
+const txtToArr = function (file) {
   try {
     // Init new array
     const output = [];
     // read the textfile and split to lines
     const line = fs.readFileSync(file).toString().split("\r\n");
     for (i in line) {
-      console.log(line[i]);
+      // console.log(line[i]);
       // One line to array
       const lineSplits = line[i].split("%");
+      // console.log(lineSplits);
       output.push(lineSplits);
-    };
+    }
 
     //TODO clear the txt file to empty...
     return output;
-  } catch (err){
+    // return output;
+  } catch (err) {
     resultJson.isErrors = true;
     console.error(err);
-  };
+  }
 };
 
 /**
