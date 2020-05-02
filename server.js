@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
       isErrors: false,
       orders: [],
     };
-    dbase.collection("orders").findOne({}, (err, result) => {
+    dbase.collection("orders").find().toArray((err, result) => {
       if (err) {
         resultJson.isErrors = true;
         resultJson.strErrors.push(`Ошибка подключения к базе данных ${err}`);
