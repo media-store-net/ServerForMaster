@@ -22,7 +22,7 @@ const txtToArr = function () {
          * Преобразование в объект
          */
         output = Object.assign({}, lineSplits);
-        console.log(lineSplits);
+        //console.log(lineSplits);
 
         /**
          * Подключение и предача в MongoDB
