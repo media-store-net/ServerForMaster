@@ -39,30 +39,28 @@ app.get("/", (req, res) => {
       if (err) {
         resultJson.isErrors = true;
         resultJson.strErrors.push(`Ошибка подключения к базе данных ${err}`);
-        // res.json(resultJson);
+        res.json(resultJson);
         return console.log(err);
       }
       db.close();
-      // res.json(resultJson);
+      res.json(resultJson);
     });
   });
-
-  res.json(resultJson);
-  // console.log(resultJson.orders);
 });
 
 const txtToArr = function (file) {
   try {
     // Init new array
-    const output = [];
+    let output = null;
     // read the textfile and split to lines
     const line = fs.readFileSync(file).toString().split("\r\n");
+    //console.log(line)
     for (i in line) {
-      // console.log(line[i]);
       // One line to array
       const lineSplits = line[i].split("%");
-      // console.log(lineSplits);
-      output.push(lineSplits);
+      //output.push(lineSplits);
+      output = Object.assign({}, [lineSplits]);
+      console.log(output);
     }
 
     //TODO clear the txt file to empty...
