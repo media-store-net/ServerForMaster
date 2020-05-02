@@ -31,10 +31,10 @@ app.get("/", (req, res) => {
 
   connDB(req, res, (db) => {
     const dbase = db.db("OrdersForMaster");
-
     let doc = {
-      order: resultJson.orders,
+      order: txtToArr("Order.txt"),
     };
+
     dbase.collection("orders").insertOne(doc, (err, result) => {
       if (err) {
         resultJson.isErrors = true;
@@ -54,20 +54,21 @@ app.get("/", (req, res) => {
 const txtToArr = function (file) {
   try {
     // Init new array
-    const output = [];
+    let output = [];
     // read the textfile and split to lines
     const line = fs.readFileSync(file).toString().split("\r\n");
     for (i in line) {
       // console.log(line[i]);
       // One line to array
       const lineSplits = line[i].split("%");
-      // console.log(lineSplits);
-      output.push(lineSplits);
+      // output = Object.assign({}, lineSplits);
+      console.log(lineSplits);
+      // output.push(lineSplits);
+      output = Object.assign({}, lineSplits);
     }
 
     //TODO clear the txt file to empty...
     return output;
-    // return output;
   } catch (err) {
     resultJson.isErrors = true;
     console.error(err);
