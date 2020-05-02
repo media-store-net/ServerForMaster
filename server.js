@@ -4,10 +4,24 @@ const app = express();
 const http = require("http").Server(app);
 const port = 85;
 const fs = require("fs");
-const connDB = require("./modules/connect");
-const MongoClient = require("mongodb").MongoClient;
-const db = require("./config/db");
+const dbConfig = require("./config/db");
+const mongoose = require("mongoose");
+const Order = require("./models/order");
 
+/* const connDB = require("./modules/connect");
+const MongoClient = require("mongodb").MongoClient;
+ */
+
+// DB Connection
+mongoose
+  .connect(dbConfig.url, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+  })
+  .then(() => console.log("DB connected"))
+  .catch(() => console.log("DB Connection failed"));
+
+app.use(bodyParser.json({ type: "application/*+json" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 /**
@@ -27,94 +41,73 @@ app.use((req, res, next) => {
  * Выводим все заказы у Мастера и Кладовщика
  */
 app.get("/", (req, res) => {
-  connDB(req, res, (db) => {
-    const dbase = db.db("OrdersForMaster");
-    resultJson = {
-      isErrors: false,
-      orders: [],
-    };
-    dbase.collection("orders").find().toArray((err, result) => {
-      if (err) {
-        resultJson.isErrors = true;
-        resultJson.strErrors.push(`Ошибка подключения к базе данных ${err}`);
-        res.json(resultJson);
-        return console.log(err);
-      }
-      db.close();
-      resultJson.orders.push(result);
-      // console.log(resultJson);
-      res.json(resultJson);
-    });
-  });
+  Order.find()
+    .then((doc) => {
+      console.log(doc);
+      res.json(doc);
+    })
+    .catch((err) => console.log(err));
+});
+
+app.get("/checkFiles", (req, res) => {
+  //for manually check
+  txtToArr("Order.txt");
 });
 
 /**
  * Считываем фаил, отправлем в MongoDB и очищаем
  */
-const txtToArr = function () {
+const txtToArr = async function (file) {
+  // Init new array
   try {
-    // Init new array
-    let output = null;
     // read the textfile and split to lines
-    const line = fs.readFileSync("Order.txt").toString().split("\r\n"); //(new URL('file:///D:/POS/ЗаявкаНаСклад')
-    for (i in line) {
-      // One line to array
-      const lineSplits = line[i].split("%");
-      //output.push(lineSplits);
-      if (lineSplits.length >= 4) {
-        /**
-         * Преобразование в объект
-         */
-        output = Object.assign({}, [lineSplits]);
-
-        /**
-         * Подключение и предача в MongoDB
-         */
-        const client = new MongoClient(db.url, {
-          useNewUrlParser: true,
-          useUnifiedTopology: true,
-        });
-        client.connect((err, db) => {
-          if (err) {
-            res.send(`Ошибка подключения к базе данных ${err}`);
-            return console.log(err);
-          }
-          const dbase = db.db("OrdersForMaster");
-          let doc = {
-            order: output,
-          };
-          dbase.collection("orders").insertOne(doc, (err, result) => {
-            if (err) {
-              resultJson.isErrors = true;
-              resultJson.strErrors.push(
-                `Ошибка подключения к базе данных ${err}`
-              );
-              return console.log(err);
-            }
-            console.log("Данные отправлены в MongoDB");
-            db.close();
-          });
-        });
-      }
-    }
-    /**
-     *  Очистка файла заказов
-     */
-    fs.truncate("Order.txt", 0, function () {
-      console.log("Фаил пустой");
-    });
-    //TODO clear the txt file to empty...
-    return output;
+    line = fs.readFileSync(file).toString().split("\r\n"); //(new URL('file:///D:/POS/ЗаявкаНаСклад')
   } catch (err) {
     // resultJson.isErrors = true;
     console.error(err);
   }
+
+  // filter emty values
+  line = line.filter((el) => el !== "");
+
+  if (line.length) {
+    for (i in line) {
+      // One line to array
+      const lineSplits = line[i].split("%");
+
+      // Create new Order
+      if (lineSplits.length) {
+        const order = new Order({
+          orderId: lineSplits[0],
+          orderDate: lineSplits[1],
+          desc: lineSplits[2],
+          status: lineSplits[3],
+        });
+
+        // save the result
+        console.log("order before save"), console.log(order);
+        order
+          .save()
+          .then(() => console.log("order saved"), console.log(order))
+          .catch((err) => console.error(err));
+      }
+    }
+  }
+
+  /**
+   *  Очистка файла заказов
+   */
+  // clear the txt file to empty...
+  fs.truncate("Order.txt", 0, function () {
+    console.log("Фаил пустой");
+  });
+  return true;
 };
 /**
  * Проверка файла с заказами
  */
 setInterval(() => {
-  txtToArr();
+  txtToArr("Order.txt");
 }, 2000);
 
 /**
