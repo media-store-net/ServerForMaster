@@ -5,6 +5,8 @@ const http = require("http").Server(app);
 const port = 85;
 const fs = require("fs");
 const connDB = require("./modules/connect");
+const MongoClient = require("mongodb").MongoClient;
+const db = require("./config/db");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -21,59 +23,99 @@ app.use((req, res, next) => {
   next();
 });
 
+/**
+ * Выводим все заказы у Мастера и Кладовщика
+ */
 app.get("/", (req, res) => {
-  resultJson = {
-    isErrors: false,
-    orders: [],
-  };
-
-  resultJson.orders = txtToArr("Order.txt");
-
   connDB(req, res, (db) => {
     const dbase = db.db("OrdersForMaster");
-    let doc = {
-      order: txtToArr("Order.txt"),
+    resultJson = {
+      isErrors: false,
+      orders: [],
     };
-
-    dbase.collection("orders").insertOne(doc, (err, result) => {
+    dbase.collection("orders").findOne({}, (err, result) => {
       if (err) {
         resultJson.isErrors = true;
         resultJson.strErrors.push(`Ошибка подключения к базе данных ${err}`);
-        // res.json(resultJson);
+        res.json(resultJson);
         return console.log(err);
       }
       db.close();
-      // res.json(resultJson);
+      resultJson.orders.push(result);
+      // console.log(resultJson);
+      res.json(resultJson);
     });
   });
-
-  res.json(resultJson);
-  // console.log(resultJson.orders);
 });
 
-const txtToArr = function (file) {
+/**
+ * Считываем фаил, отправлем в MongoDB и очищаем
+ */
+const txtToArr = function () {
   try {
     // Init new array
-    let output = [];
+    let output = null;
     // read the textfile and split to lines
-    const line = fs.readFileSync(file).toString().split("\r\n");
+    const line = fs.readFileSync("Order.txt").toString().split("\r\n"); //(new URL('file:///D:/POS/ЗаявкаНаСклад')
     for (i in line) {
-      // console.log(line[i]);
       // One line to array
       const lineSplits = line[i].split("%");
-      // output = Object.assign({}, lineSplits);
-      console.log(lineSplits);
-      // output.push(lineSplits);
-      output = Object.assign({}, lineSplits);
-    }
+      //output.push(lineSplits);
+      if (lineSplits.length >= 4) {
+        /**
+         * Преобразование в объект
+         */
+        output = Object.assign({}, [lineSplits]);
 
+        /**
+         * Подключение и предача в MongoDB
+         */
+        const client = new MongoClient(db.url, {
+          useNewUrlParser: true,
+          useUnifiedTopology: true,
+        });
+        client.connect((err, db) => {
+          if (err) {
+            res.send(`Ошибка подключения к базе данных ${err}`);
+            return console.log(err);
+          }
+          const dbase = db.db("OrdersForMaster");
+          let doc = {
+            order: output,
+          };
+          dbase.collection("orders").insertOne(doc, (err, result) => {
+            if (err) {
+              resultJson.isErrors = true;
+              resultJson.strErrors.push(
+                `Ошибка подключения к базе данных ${err}`
+              );
+              return console.log(err);
+            }
+            console.log("Данные отправлены в MongoDB");
+            db.close();
+          });
+        });
+      }
+    }
+    /**
+     *  Очистка файла заказов
+     */
+    fs.truncate("Order.txt", 0, function () {
+      console.log("Фаил пустой");
+    });
     //TODO clear the txt file to empty...
     return output;
   } catch (err) {
-    resultJson.isErrors = true;
+    // resultJson.isErrors = true;
     console.error(err);
   }
 };
+/**
+ * Проверка файла с заказами
+ */
+setInterval(() => {
+  txtToArr();
+}, 2000);
 
 /**
  * Прослушка порта
