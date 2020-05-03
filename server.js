@@ -3,12 +3,15 @@ const bodyParser = require("body-parser");
 const app = express();
 const http = require("http").Server(app);
 const fs = require("fs");
-const port = 85;
 const dbConfig = require("./config/db");
 const mongoose = require("mongoose");
 const Order = require("./models/order");
 
-//DB Connection
+/* const connDB = require("./modules/connect");
+const MongoClient = require("mongodb").MongoClient;
+ */
+
+// DB Connection
 mongoose
   .connect(dbConfig.url, {
     useUnifiedTopology: true,
@@ -20,6 +23,18 @@ mongoose
 app.use(bodyParser.json({ type: "application/*+json" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.get("/", (req, res) => {
+  Order.find()
+    .then((doc) => {
+      console.log(doc);
+      res.json(doc);
+    })
+    .catch((err) => console.log(err));
+});
+
+/**
+ * Выводим все заказы у Мастера и Кладовщика
+ */
 app.get("/", (req, res) => {
   Order.find()
     .then((doc) => {
