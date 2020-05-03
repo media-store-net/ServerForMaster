@@ -3,12 +3,48 @@ const bodyParser = require("body-parser");
 const app = express();
 const http = require("http").Server(app);
 const port = 85;
+const dbConfig = require("./config/db");
+const mongoose = require("mongoose");
+const Order = require("./models/order");
 
+//DB Connection
+mongoose
+  .connect(dbConfig.url, {
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+  })
+  .then(() => console.log("DB connected"))
+  .catch(() => console.log("DB Connection failed"));
+
+app.use(bodyParser.json({ type: "application/*+json" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const ordersRoutes = require("./routes/orders");
 const writeOrders = require("./routes/writeOrder");
 
+app.get("/", (req, res) => {
+  Order.find()
+    .then((doc) => {
+      console.log(doc);
+      res.json(doc);
+    })
+    .catch((err) => console.log(err));
+});
+
+app.get("/checkFiles", (req, res) => {
+  //for manually check
+  txtToArr("Order.txt");
+});
+
+// Create new Order
+if (lineSplits.length) {
+  const order = new Order({
+    orderId: lineSplits[0],
+    orderDate: lineSplits[1],
+    desc: lineSplits[2],
+    status: lineSplits[3],
+  });
+}
 /**
  * Глобальные заголовки
  */
