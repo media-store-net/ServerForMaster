@@ -2,14 +2,24 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 const http = require("http").Server(app);
+const port = 85;
 const fs = require("fs");
 const dbConfig = require("./config/db");
 const mongoose = require("mongoose");
 const Order = require("./models/order");
 
-/* const connDB = require("./modules/connect");
-const MongoClient = require("mongodb").MongoClient;
+/**
+ * Глобальные заголовки
  */
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
 
 // DB Connection
 mongoose
@@ -23,19 +33,10 @@ mongoose
 app.use(bodyParser.json({ type: "application/*+json" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/", (req, res) => {
-  Order.find()
-    .then((doc) => {
-      console.log(doc);
-      res.json(doc);
-    })
-    .catch((err) => console.log(err));
-});
-
 /**
  * Выводим все заказы у Мастера и Кладовщика
  */
-app.get("/", (req, res) => {
+app.get("/findOrders", (req, res) => {
   Order.find()
     .then((doc) => {
       console.log(doc);
@@ -104,18 +105,6 @@ const txtToArr = async function (file) {
 setInterval(() => {
   txtToArr("Order.txt");
 }, 2000);
-/**
- * Глобальные заголовки
- */
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
 
 /**
  * Прослушка порта
