@@ -19,9 +19,6 @@ mongoose
 app.use(bodyParser.json({ type: "application/*+json" }));
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const ordersRoutes = require("./routes/orders");
-const writeOrders = require("./routes/writeOrder");
-
 app.get("/", (req, res) => {
   Order.find()
     .then((doc) => {
