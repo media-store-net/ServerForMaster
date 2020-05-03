@@ -3,12 +3,11 @@ const bodyParser = require("body-parser");
 const app = express();
 const http = require("http").Server(app);
 const port = 85;
-const fs = require("fs");
-const connDB = require("./modules/connect");
-const MongoClient = require("mongodb").MongoClient;
-const db = require("./config/db");
 
 app.use(bodyParser.urlencoded({ extended: true }));
+
+const ordersRoutes = require("./routes/orders");
+const writeOrders = require("./routes/writeOrder");
 
 /**
  * Глобальные заголовки
@@ -113,9 +112,8 @@ const txtToArr = function () {
 /**
  * Проверка файла с заказами
  */
-setInterval(() => {
-  txtToArr();
-}, 2000);
+app.use("/orders", ordersRoutes);
+app.use("/", writeOrders);
 
 /**
  * Прослушка порта
