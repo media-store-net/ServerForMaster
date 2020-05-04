@@ -39,7 +39,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/findOrders", (req, res) => {
   Order.find()
     .then((doc) => {
-      console.log(doc);
+      //console.log(doc);
       res.json(doc);
     })
     .catch((err) => console.log(err));
@@ -48,6 +48,19 @@ app.get("/findOrders", (req, res) => {
 app.get("/checkFiles", (req, res) => {
   //for manually check
   txtToArr("Order.txt");
+});
+
+/**
+ * Мненяем статус заказа
+ */
+app.post("/newStatus", (req, res) => {
+  //console.log(req.body);
+  let orderId = req.body.orderId;
+  Order.findOneAndUpdate({ orderId: orderId }, { status: req.body.status })
+    .then((doc) => {
+      // console.log(doc);
+    })
+    .catch((err) => console.log(err));
 });
 
 /**
@@ -77,14 +90,17 @@ const txtToArr = async function (file) {
           orderId: lineSplits[0],
           orderDate: lineSplits[1],
           desc: lineSplits[2],
-          status: lineSplits[3],
+          status: 0,
+          cell: 0,
         });
 
         // save the result
-        console.log("order before save"), console.log(order);
+        // console.log("order before save"), console.log(order);
         order
           .save()
-          .then(() => console.log("order saved"), console.log(order))
+          .then(() => {
+            console.log("order saved"), console.log(order);
+          })
           .catch((err) => console.error(err));
       }
     }
