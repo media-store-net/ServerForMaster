@@ -58,6 +58,7 @@ app.post("/newStatus", (req, res) => {
   let orderId = req.body.orderId;
   Order.findOneAndUpdate({ orderId: orderId }, { status: req.body.status })
     .then((doc) => {
+      res.json(doc);
       // console.log(doc);
     })
     .catch((err) => console.log(err));
