@@ -26,6 +26,7 @@ mongoose
   .connect(dbConfig.url, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
+    useFindAndModify: false,
   })
   .then(() => console.log("DB connected"))
   .catch(() => console.log("DB Connection failed"));
@@ -54,14 +55,24 @@ app.get("/checkFiles", (req, res) => {
  * Мненяем статус заказа
  */
 app.post("/newStatus", (req, res) => {
-  //console.log(req.body);
-  let orderId = req.body.orderId;
-  Order.findOneAndUpdate({ orderId: orderId }, { status: req.body.status })
-    .then((doc) => {
-      res.json(doc);
-      // console.log(doc);
-    })
-    .catch((err) => console.log(err));
+  if (req.body.status != 4) {
+    let orderId = req.body.orderId;
+    Order.findOneAndUpdate(
+      { _id: orderId },
+      { status: req.body.status, cell: req.body.cell }
+    )
+      .then((doc) => {
+        res.json(doc);
+        // console.log(doc);
+      })
+      .catch((err) => console.log(err));
+  } else {
+    let orderId = req.body.orderId;
+    Order.findOneAndRemove({ _id: orderId }, function (err, offer) {
+      if (err) res.send(err);
+      else res.json({ offer });
+    });
+  }
 });
 
 /**
@@ -91,8 +102,6 @@ const txtToArr = async function (file) {
           orderId: lineSplits[0],
           orderDate: lineSplits[1],
           desc: lineSplits[2],
-          status: 0,
-          cell: 0,
         });
 
         // save the result
