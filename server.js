@@ -57,24 +57,24 @@ app.get("/checkFiles", (req, res) => {
  * Мненяем статус заказа
  */
 app.post("/newStatus", (req, res) => {
-  if (req.body.status != 4) {
-    let orderId = req.body.orderId;
-    Order.findOneAndUpdate(
-      { _id: orderId },
-      { status: req.body.status, cell: req.body.cell }
-    )
-      .then((doc) => {
-        res.json(doc);
-        // console.log(doc);
-      })
-      .catch((err) => console.log(err));
-  } else {
-    let orderId = req.body.orderId;
-    Order.findOneAndRemove({ _id: orderId }, function (err, offer) {
-      if (err) res.send(err);
-      else res.json({ offer });
-    });
-  }
+  let orderId = req.body.orderId;
+  Order.findOneAndUpdate(
+    { _id: orderId },
+    {
+      status: req.body.status,
+      cell: req.body.cell,
+      dateAssembly: req.body.dateAssembly,
+      dateDone: req.body.dateDone,
+      dateDone_ready: req.body.dateDone_ready,
+      dateErr: req.body.dateErr,
+      dateClose: req.body.dateClose,
+    }
+  )
+    .then((doc) => {
+      res.json(doc);
+      // console.log(doc);
+    })
+    .catch((err) => console.log(err));
 });
 
 /**
