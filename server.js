@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const http = require("http").Server(app);
+const server = require("http").Server(app);
 const port = 85;
 const fs = require("fs");
 const dbConfig = require("./config/db");
@@ -21,11 +21,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// DB Connection
+/**
+ * Подключение к базе данных
+ */
 mongoose
   .connect(dbConfig.url, {
     useUnifiedTopology: true,
     useNewUrlParser: true,
+    useFindAndModify: false,
   })
   .then(() => console.log("DB connected"))
   .catch(() => console.log("DB Connection failed"));
@@ -39,52 +42,75 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get("/findOrders", (req, res) => {
   Order.find()
     .then((doc) => {
-      console.log(doc);
+      //console.log(doc);
       res.json(doc);
     })
     .catch((err) => console.log(err));
 });
 
 app.get("/checkFiles", (req, res) => {
-  //for manually check
+  //Для ручной проверки
   txtToArr("Order.txt");
 });
 
 /**
- * Считываем фаил, отправлем в MongoDB и очищаем
+ * Мненяем статус заказа
+ */
+app.post("/newStatus", (req, res) => {
+  let orderId = req.body.orderId;
+  Order.findOneAndUpdate(
+    { _id: orderId },
+    {
+      status: req.body.status,
+      cell: req.body.cell,
+      dateAssembly: req.body.dateAssembly,
+      dateDone: req.body.dateDone,
+      dateDone_ready: req.body.dateDone_ready,
+      dateErr: req.body.dateErr,
+      dateClose: req.body.dateClose,
+    }
+  )
+    .then((doc) => {
+      res.json(doc);
+      // console.log(doc);
+    })
+    .catch((err) => console.log(err));
+});
+
+/**
+ * Считываем фаил, отправлем в MongoDB
  */
 const txtToArr = async function (file) {
-  // Init new array
+  // Создаем новый массив
   try {
-    // read the textfile and split to lines
-    line = fs.readFileSync(file).toString().split("\r\n"); //(new URL('file:///D:/POS/ЗаявкаНаСклад')
+    // Считываем текстовый файл и разбиваем на строки
+    line = fs.readFileSync(file).toString().split("\r\n");
   } catch (err) {
-    // resultJson.isErrors = true;
     console.error(err);
   }
 
-  // filter emty values
+  // Отфильтровываем пустые значения
   line = line.filter((el) => el !== "");
 
   if (line.length) {
     for (i in line) {
-      // One line to array
+      // Преобразовываем 1 строку в массив
       const lineSplits = line[i].split("%");
 
-      // Create new Order
+      // Создаем новый заказ
       if (lineSplits.length) {
         const order = new Order({
           orderId: lineSplits[0],
           orderDate: lineSplits[1],
           desc: lineSplits[2],
-          status: lineSplits[3],
         });
 
-        // save the result
-        console.log("order before save"), console.log(order);
+        // Создаем новый заказ
         order
           .save()
-          .then(() => console.log("order saved"), console.log(order))
+          .then(() => {
+            // console.log("order saved"), console.log(order);
+          })
           .catch((err) => console.error(err));
       }
     }
@@ -93,9 +119,8 @@ const txtToArr = async function (file) {
   /**
    *  Очистка файла заказов
    */
-  // clear the txt file to empty...
   fs.truncate("Order.txt", 0, function () {
-    console.log("Фаил пустой");
+    // console.log("Фаил пустой");
   });
   return true;
 };
