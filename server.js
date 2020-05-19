@@ -26,6 +26,8 @@ app.use((req, res, next) => {
  */
 mongoose
   .connect(dbConfig.url, {
+    user: dbConfig.user,
+    pass: dbConfig.pass,
     useUnifiedTopology: true,
     useNewUrlParser: true,
     useFindAndModify: false,
