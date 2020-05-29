@@ -1,0 +1,13 @@
+version: "3"
+services:
+  node:
+    image: "node:12"
+    user: "node"
+    working_dir: /home/node/ServerForMaster
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./:/home/node/app
+    expose:
+      - SERVER_PORT
+    command: "npm start"
